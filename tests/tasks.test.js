@@ -1,11 +1,17 @@
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from "supertest";
 import app from "../src/app.js";
 
+let mongoServer;
 let token;
 let taskId;
 
 beforeAll(async () => {
-  // Register
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  await mongoose.connect(uri);
+
   await request(app)
     .post("/api/auth/register")
     .send({
@@ -14,7 +20,6 @@ beforeAll(async () => {
       password: "123456"
     });
 
-  // Login
   const res = await request(app)
     .post("/api/auth/login")
     .send({
@@ -23,6 +28,12 @@ beforeAll(async () => {
     });
 
   token = res.body.token;
+}, 30000);
+
+afterAll(async () => {
+  await mongoose.connection.dropDatabase();
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
 describe("Task Routes", () => {
