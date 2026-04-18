@@ -1,8 +1,23 @@
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from "supertest";
 import app from "../src/app.js";
 
-describe("Auth Routes", () => {
+let mongoServer;
 
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  await mongoose.connect(uri);
+}, 30000);
+
+afterAll(async () => {
+  await mongoose.connection.dropDatabase();
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
+
+describe("Auth Routes", () => {
   let token;
 
   it("should register a user", async () => {
@@ -31,5 +46,4 @@ describe("Auth Routes", () => {
 
     token = res.body.token;
   });
-
 });
